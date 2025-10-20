@@ -1,0 +1,18 @@
+{
+  "preferences": "Preferences",
+  "language": "Language",
+  "portuguese": "Portuguese",
+  "english": "English",
+  "back": "Back",
+  "dashboardTitle": "InterWorld",
+  "studentPanel": "Student Area",
+  "schoolPanel": "Institutional Panel",
+  "landlordPanel": "Landlord Area",
+  "settings": "Settings",
+  "notifications": "Notifications",
+  "logout": "Logout",
+  "hello": "Hello, {{name}}! 👋",
+  "studentWelcome": "Explore exchange opportunities and advance in your academic journey.",
+  "schoolWelcome": "Manage your exchange opportunities and connect with students.",
+  "landlordWelcome": "Manage your properties and connect with international students."
+}

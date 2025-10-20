@@ -1,0 +1,18 @@
+{
+  "preferences": "Preferências",
+  "language": "Idioma",
+  "portuguese": "Português",
+  "english": "Inglês",
+  "back": "Voltar",
+  "dashboardTitle": "InterWorld",
+  "studentPanel": "Área do Estudante",
+  "schoolPanel": "Painel Institucional",
+  "landlordPanel": "Área do Senhorio",
+  "settings": "Configurações",
+  "notifications": "Notificações",
+  "logout": "Sair",
+  "hello": "Olá, {{name}}! 👋",
+  "studentWelcome": "Explore oportunidades de intercâmbio e avance em sua jornada acadêmica.",
+  "schoolWelcome": "Gerencie suas oportunidades de intercâmbio e conecte-se com estudantes.",
+  "landlordWelcome": "Gerencie suas propriedades e conecte-se com estudantes de intercâmbio."
+}
