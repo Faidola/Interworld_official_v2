@@ -12,6 +12,7 @@ import { X, Plus, Save, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import programaService from '@/services/programaService';
+import escolaService from '@/services/escolaService';
 
 interface Acomodacao {
   id: string;
@@ -167,6 +168,16 @@ const CadastrarPrograma = () => {
     setIsSubmitting(true);
 
     try {
+      // Buscar o ID da escola baseado no usuário logado
+      let escolaId;
+      try {
+        const escola = await escolaService.buscarPorUsuarioId(parseInt(userData.id));
+        escolaId = escola.id;
+      } catch (error) {
+        // Fallback: usar o ID do usuário como ID da escola (temporário)
+        console.warn('Não foi possível buscar escola pelo usuário. Usando ID do usuário como fallback.');
+        escolaId = parseInt(userData.id);
+      }
       // Formatar acomodação
       const acomodacaoFormatada = acomodacoes.length > 0 
         ? JSON.stringify(acomodacoes.map(ac => ({
@@ -192,16 +203,17 @@ const CadastrarPrograma = () => {
       const programaData = {
         titulo: formData.titulo,
         descricao: formData.descricao,
-        idioma: {
-          id: parseInt(formData.idioma)
-        },
+        idioma_id: parseInt(formData.idioma),
         pais: formData.pais,
         cidade: formData.cidade,
+        duracaoSemanas: 4, // Valor padrão, pode ser adicionado ao formulário depois
         vagasDisponiveis: parseInt(formData.vagasDisponiveis),
         preco: parseFloat(formData.preco),
-        escola: {
-          id: parseInt(userData.id)
-        },
+        moeda: 'USD',
+        nivelIdioma: 'Básico', // Valor padrão, pode ser adicionado ao formulário depois
+        tipoPrograma: 'CURSO_IDIOMA',
+        temBolsa: false,
+        escola_id: escolaId,
         dataCadastro: new Date().toISOString(),
         acomodacao: acomodacaoFormatada,
         acomodacaoPreco: acomodacoes.length > 0 ? acomodacoes[0].precoSemanal : undefined,

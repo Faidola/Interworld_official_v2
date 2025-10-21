@@ -26,16 +26,20 @@ export interface ProgramaIntercambio {
 export interface ProgramaCreate {
   titulo: string;
   descricao: string;
-  idioma: {
-    id: number;
-  };
+  idioma_id: number;
   pais: string;
   cidade: string;
+  duracaoSemanas: number;
   vagasDisponiveis: number;
   preco: number;
-  escola: {
-    id: number;
-  };
+  moeda: string;
+  nivelIdioma: string;
+  tipoPrograma: string;
+  temBolsa: boolean;
+  dataInicio?: string;
+  dataFim?: string;
+  requisitos?: string;
+  escola_id: number;
   dataCadastro: string;
   acomodacao?: string;
   acomodacaoPreco?: string;
