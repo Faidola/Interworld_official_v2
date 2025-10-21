@@ -62,21 +62,10 @@ CREATE TABLE Idioma
     nome      VARCHAR(50)  NOT NULL,
     descricao VARCHAR(100) NOT NULL,
  
+
     PRIMARY KEY(id)
 );
- 
-CREATE TABLE EscolaIdioma
-(
-    id                  INT             IDENTITY,
-    descricao           VARCHAR(400)    NOT NULL,
-    escola_id           INT             NOT NULL,
-    idioma_id           INT             NOT NULL,
-    statusEscolaIdioma  VARCHAR(10)     NOT NULL, -- ATIVO ou INATIVO
- 
-    PRIMARY KEY (id),
-    FOREIGN KEY (escola_id) REFERENCES Escola (id),
-    FOREIGN KEY (idioma_id) REFERENCES Idioma (id)
-);
+
  
 CREATE TABLE Senhorio
 (
@@ -167,116 +156,34 @@ CREATE TABLE Mensagem
     FOREIGN KEY (usuario_id) REFERENCES Usuario (id),
     FOREIGN KEY (escola_id) REFERENCES Escola (id)
 );
- 
+
 -- Tabela para Programas de Intercâmbio
 CREATE TABLE ProgramaIntercambio
 (
     id                    INT             IDENTITY,
     titulo                VARCHAR(200)    NOT NULL,
     descricao             VARCHAR(1000)   NOT NULL,
+	idioma_id             INT             NOT NULL,
     pais                  VARCHAR(50)     NOT NULL,
     cidade                VARCHAR(100)    NOT NULL,
-    duracaoSemanas        INT             NOT NULL,
     vagasDisponiveis      INT             NOT NULL,
     preco                 DECIMAL(10,2)   NOT NULL,
-    moeda                 VARCHAR(3)      NOT NULL DEFAULT 'USD',
-    nivelIdioma           VARCHAR(50)     NOT NULL,
-    tipoPrograma          VARCHAR(50)     NOT NULL, -- 'CURSO_IDIOMA', 'ACADEMICO', 'PROFISSIONAL'
-    temBolsa              BIT             NOT NULL DEFAULT 0,
-    dataInicio            DATE            NULL,
-    dataFim               DATE            NULL,
-    requisitos            VARCHAR(1000)   NULL,
     escola_id             INT             NOT NULL,
-    statusPrograma        VARCHAR(20)     NOT NULL DEFAULT 'ATIVO', -- ATIVO, INATIVO, PAUSADO
-    dataCriacao           SMALLDATETIME   NOT NULL DEFAULT GETDATE(),
-    dataAtualizacao       SMALLDATETIME   NULL,
+
+    dataCadastro          SMALLDATETIME   NOT NULL,
+    acomodacao            VARCHAR(200)    NULL,
+    acomodacaoPreco       VARCHAR(200)    NULL,
+    infoEstagio           VARCHAR(200)    NULL,
+	statusPrograma        VARCHAR(20)     NOT NULL DEFAULT 'ATIVO', -- ATIVO, INATIVO, PAUSADO
+
 
     PRIMARY KEY (id),
-    FOREIGN KEY (escola_id) REFERENCES Escola (id)
+    FOREIGN KEY (escola_id) REFERENCES Escola (id),
+	FOREIGN KEY (idioma_id) REFERENCES Idioma (id)
 );
-
--- Tabela para Acomodações dos Programas
-CREATE TABLE AcomodacaoPrograma
-(
-    id                    INT             IDENTITY,
-    programa_id           INT             NOT NULL,
-    tipoAcomodacao        VARCHAR(50)     NOT NULL, -- 'CASA_FAMILIA', 'RESIDENCIA', 'APARTAMENTO', 'STUDIO'
-    descricao             VARCHAR(500)    NOT NULL,
-    precoSemanal          DECIMAL(10,2)   NOT NULL,
-    moeda                 VARCHAR(3)      NOT NULL DEFAULT 'USD',
-    comodidades           VARCHAR(500)    NULL, -- JSON string com comodidades
-    disponivel            BIT             NOT NULL DEFAULT 1,
-
-    PRIMARY KEY (id),
-    FOREIGN KEY (programa_id) REFERENCES ProgramaIntercambio (id)
-);
-
--- Tabela para Estágios dos Programas
-CREATE TABLE EstagioPrograma
-(
-    id                    INT             IDENTITY,
-    programa_id           INT             NOT NULL,
-    disponivel            BIT             NOT NULL DEFAULT 0,
-    descricao             VARCHAR(500)    NULL,
-    duracaoSemanas        VARCHAR(50)     NULL, -- '4-8 semanas', '6-12 semanas', etc
-    areas                 VARCHAR(500)    NULL, -- JSON string com áreas de estágio
-    remunerado            BIT             NOT NULL DEFAULT 0,
-    requisitos            VARCHAR(500)    NULL,
-
-    PRIMARY KEY (id),
-    FOREIGN KEY (programa_id) REFERENCES ProgramaIntercambio (id)
-);
-
--- Tabela para Candidaturas de Estudantes
-CREATE TABLE CandidaturaPrograma
-(
-    id                    INT             IDENTITY,
-    programa_id           INT             NOT NULL,
-    estudante_id          INT             NOT NULL,
-    statusCandidatura     VARCHAR(20)     NOT NULL DEFAULT 'PENDENTE', -- PENDENTE, APROVADA, REJEITADA, CANCELADA
-    dataCandidatura       SMALLDATETIME   NOT NULL DEFAULT GETDATE(),
-    observacoes           VARCHAR(1000)   NULL,
-    documentosEnviados    VARCHAR(500)    NULL, -- JSON string com documentos
-    dataResposta          SMALLDATETIME   NULL,
-
-    PRIMARY KEY (id),
-    FOREIGN KEY (programa_id) REFERENCES ProgramaIntercambio (id),
-    FOREIGN KEY (estudante_id) REFERENCES Estudante (id)
-);
-
--- Inserir alguns idiomas básicos
-INSERT INTO Idioma (nome, descricao) VALUES 
-('Inglês', 'Língua inglesa'),
-('Espanhol', 'Língua espanhola'),
-('Francês', 'Língua francesa'),
-('Alemão', 'Língua alemã'),
-('Italiano', 'Língua italiana'),
-('Português', 'Língua portuguesa'),
-('Japonês', 'Língua japonesa'),
-('Chinês', 'Língua chinesa');
-
--- Inserir dados de exemplo para programas
-INSERT INTO ProgramaIntercambio (titulo, descricao, pais, cidade, duracaoSemanas, vagasDisponiveis, preco, moeda, nivelIdioma, tipoPrograma, temBolsa, dataInicio, dataFim, requisitos, escola_id, statusPrograma)
-VALUES 
-('Inglês Intensivo em Nova York', 'Aprenda inglês no coração da Big Apple. Aulas dinâmicas com foco em conversação e cultura local.', 'Estados Unidos', 'Nova York', 4, 15, 1850.00, 'USD', 'Básico', 'CURSO_IDIOMA', 0, '2025-03-01', '2025-03-29', 'Nível Básico, Visto de Turista', 1, 'ATIVO'),
-('Inglês Geral em Londres', 'Desenvolva sua fluência em um ambiente acadêmico tradicional e explore a capital britânica.', 'Reino Unido', 'Londres', 8, 10, 3200.00, 'USD', 'Intermediário', 'CURSO_IDIOMA', 1, '2025-04-01', '2025-05-27', 'Nível Intermediário, Passaporte Válido', 1, 'ATIVO');
-
--- Inserir acomodações para os programas
-INSERT INTO AcomodacaoPrograma (programa_id, tipoAcomodacao, descricao, precoSemanal, moeda, comodidades, disponivel)
-VALUES 
-(1, 'CASA_FAMILIA', 'Acomodação em casa de família americana com café da manhã incluído', 320.00, 'USD', '["Wi-Fi", "Café da manhã", "Quarto individual"]', 1),
-(2, 'RESIDENCIA', 'Residência universitária no centro de Londres com outros estudantes internacionais', 280.00, 'USD', '["Wi-Fi", "Cozinha compartilhada", "Quarto individual", "Área de estudos"]', 1);
-
--- Inserir estágios para os programas
-INSERT INTO EstagioPrograma (programa_id, disponivel, descricao, duracaoSemanas, areas, remunerado, requisitos)
-VALUES 
-(1, 0, 'Programa focado em estudos - sem estágio disponível', NULL, NULL, 0, NULL),
-(2, 1, 'Oportunidade de estágio em empresas locais após completar 6 semanas do curso', '4-8 semanas', '["Marketing", "Turismo", "Educação"]', 0, 'Completar 6 semanas do curso');
-
+ 
 SELECT * FROM Usuario
 SELECT * FROM Mensagem
 SELECT * FROM Estudante
 SELECT * FROM Escola
 SELECT * FROM ProgramaIntercambio
-SELECT * FROM AcomodacaoPrograma
-SELECT * FROM EstagioPrograma
