@@ -165,15 +165,17 @@ const Dashboard = () => {
                   Início
                 </Button>
               </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSettings(!showSettings)}
-                className={showSettings ? themeColors.accent : ''}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                {t('settings')}
-              </Button>
+              {userData.userType === 'student' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSettings(!showSettings)}
+                  className={showSettings ? themeColors.accent : ''}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  {t('settings')}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -206,17 +208,19 @@ const Dashboard = () => {
                   Início
                 </Button>
               </Link>
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => {
-                  setShowSettings(!showSettings);
-                  setShowMobileMenu(false);
-                }}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                {t('settings')}
-              </Button>
+              {userData.userType === 'student' && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setShowSettings(!showSettings);
+                    setShowMobileMenu(false);
+                  }}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  {t('settings')}
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-600 hover:text-red-700"
@@ -306,8 +310,8 @@ const Dashboard = () => {
 
             </div>
 
-            {/* Settings Sidebar - só aparece quando ativado */}
-            {showSettings && (
+            {/* Settings Sidebar - só aparece quando ativado e para estudantes */}
+            {showSettings && userData.userType === 'student' && (
               <div className="lg:col-span-1">
                 {renderSettingsContent()}
               </div>

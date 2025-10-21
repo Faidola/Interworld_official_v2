@@ -93,7 +93,7 @@ class ProgramaService {
     }
   }
 
-  async atualizar(id: number, programa: ProgramaCreate): Promise<ProgramaIntercambio> {
+  async atualizar(id: number, programa: ProgramaCreate | ProgramaIntercambio): Promise<ProgramaIntercambio> {
     try {
       const response = await fetch(`${API_BASE_URL}/programas/${id}`, {
         method: 'PUT',

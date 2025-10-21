@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2, Home, Briefcase, MapPin, Clock, DollarSign, Info, ExternalLink } from 'lucide-react';
+import { PlusCircle, Trash2, Home, Briefcase, MapPin, Clock, DollarSign, Info, ExternalLink, Edit, Eye, EyeOff } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import programaService, { ProgramaIntercambio } from '@/services/programaService';
+import escolaService from '@/services/escolaService';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 interface Course {
   id: number;
@@ -35,7 +46,12 @@ interface Course {
 
 const SchoolDashboard = () => {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [programas, setProgramas] = useState<ProgramaIntercambio[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [editingPrograma, setEditingPrograma] = useState<ProgramaIntercambio | null>(null);
+  const { toast } = useToast();
+  const { userData } = useAuth();
   
   // Estados do formulário
   const [formData, setFormData] = useState({
@@ -116,6 +132,85 @@ const SchoolDashboard = () => {
   const handleDeleteCourse = (id: number) => {
     setCourses(courses.filter(course => course.id !== id));
   };
+
+  // Carregar programas da escola
+  const loadProgramas = async () => {
+    if (!userData?.id) return;
+    
+    setIsLoading(true);
+    try {
+      const escola = await escolaService.buscarPorUsuarioId(parseInt(userData.id));
+      const todosProgramas = await programaService.listarTodos();
+      const programasEscola = todosProgramas.filter(p => p.escola?.id === escola.id);
+      setProgramas(programasEscola);
+    } catch (error) {
+      console.error('Erro ao carregar programas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar programas da escola.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Inativar programa
+  const handleInativarPrograma = async (programa: ProgramaIntercambio) => {
+    if (!programa.id) return;
+    
+    setIsLoading(true);
+    try {
+      const programaAtualizado = {
+        ...programa,
+        statusPrograma: programa.statusPrograma === 'ATIVO' ? 'INATIVO' : 'ATIVO'
+      };
+      
+      await programaService.atualizar(programa.id, programaAtualizado);
+      await loadProgramas();
+      
+      toast({
+        title: "Sucesso",
+        description: `Programa ${programa.statusPrograma === 'ATIVO' ? 'inativado' : 'ativado'} com sucesso!`
+      });
+    } catch (error) {
+      console.error('Erro ao alterar status do programa:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao alterar status do programa.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Deletar programa
+  const handleDeletarPrograma = async (programaId: number) => {
+    setIsLoading(true);
+    try {
+      await programaService.deletar(programaId);
+      await loadProgramas();
+      
+      toast({
+        title: "Sucesso",
+        description: "Programa deletado com sucesso!"
+      });
+    } catch (error) {
+      console.error('Erro ao deletar programa:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao deletar programa.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProgramas();
+  }, [userData]);
 
   return (
     <div className="p-4 md:p-8">
@@ -376,8 +471,113 @@ const SchoolDashboard = () => {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Programas Cadastrados</h3>
-            {courses.length > 0 ? (
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Programas Cadastrados</h3>
+              <Button 
+                onClick={loadProgramas} 
+                disabled={isLoading}
+                variant="outline"
+                size="sm"
+              >
+                {isLoading ? 'Carregando...' : 'Atualizar'}
+              </Button>
+            </div>
+            
+            {/* Programas da API */}
+            {programas.length > 0 && (
+              <div className="space-y-4 mb-6">
+                <h4 className="text-md font-medium text-gray-700">Programas Oficiais</h4>
+                <div className="grid gap-4">
+                  {programas.map((programa) => (
+                    <Card key={programa.id} className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-semibold text-lg text-gray-900">{programa.titulo}</h4>
+                            <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                              <span className="flex items-center">
+                                <MapPin className="h-4 w-4 mr-1" />
+                                {programa.cidade}, {programa.pais}
+                              </span>
+                              <span className="flex items-center">
+                                <DollarSign className="h-4 w-4 mr-1" />
+                                ${programa.preco}
+                              </span>
+                              <Badge variant={programa.statusPrograma === 'ATIVO' ? 'default' : 'secondary'}>
+                                {programa.statusPrograma}
+                              </Badge>
+                              <Badge variant="outline">{programa.vagasDisponiveis} vagas</Badge>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingPrograma(programa)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleInativarPrograma(programa)}
+                              className={programa.statusPrograma === 'ATIVO' ? 'text-orange-600 hover:text-orange-700' : 'text-green-600 hover:text-green-700'}
+                            >
+                              {programa.statusPrograma === 'ATIVO' ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+                              {programa.statusPrograma === 'ATIVO' ? 'Inativar' : 'Ativar'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => programa.id && handleDeletarPrograma(programa.id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <p className="text-sm text-gray-700 mb-3">{programa.descricao}</p>
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {/* Informações de Acomodação */}
+                          {programa.acomodacao && (
+                            <div className="border rounded-lg p-3 bg-blue-50">
+                              <h5 className="font-medium text-sm flex items-center mb-2 text-blue-800">
+                                <Home className="h-4 w-4 mr-2" />
+                                Acomodação Disponível
+                              </h5>
+                              <p className="text-xs text-gray-600">
+                                {programa.acomodacaoPreco && `$${programa.acomodacaoPreco}/semana`}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Informações de Estágio */}
+                          {programa.infoEstagio && (
+                            <div className="border rounded-lg p-3 bg-green-50">
+                              <h5 className="font-medium text-sm flex items-center mb-2 text-green-800">
+                                <Briefcase className="h-4 w-4 mr-2" />
+                                Estágio Disponível
+                              </h5>
+                              <p className="text-xs text-gray-600">
+                                Informações de estágio disponíveis
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Programas locais (antigos) */}
+            {courses.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="text-md font-medium text-gray-700">Programas Rascunho</h4>
               <div className="grid gap-4">
                 {courses.map((course) => (
                   <Card key={course.id} className="border-l-4 border-l-teal-500">
@@ -492,7 +692,11 @@ const SchoolDashboard = () => {
                   </Card>
                 ))}
               </div>
-            ) : (
+              </div>
+            )}
+            
+            {/* Mensagem quando não há programas */}
+            {programas.length === 0 && courses.length === 0 && (
               <Card className="border-dashed">
                 <CardContent className="p-8 text-center">
                   <div className="flex flex-col items-center space-y-2">
@@ -503,13 +707,12 @@ const SchoolDashboard = () => {
                     <p className="text-sm text-gray-500 max-w-sm">
                       Adicione seu primeiro programa de intercâmbio com informações completas de curso, moradia e estágio.
                     </p>
-                    <Button 
-                      onClick={() => setShowForm(true)}
-                      className="mt-4 bg-gradient-to-r from-teal-600 to-cyan-500 hover:from-teal-700 hover:to-cyan-600"
-                    >
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Criar Primeiro Programa
-                    </Button>
+                    <Link to="/cadastrar-programa">
+                      <Button className="mt-4 bg-gradient-to-r from-teal-600 to-cyan-500 hover:from-teal-700 hover:to-cyan-600">
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Criar Primeiro Programa
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
@@ -517,6 +720,103 @@ const SchoolDashboard = () => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Dialog de Edição de Programa */}
+      <Dialog open={!!editingPrograma} onOpenChange={() => setEditingPrograma(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Programa</DialogTitle>
+          </DialogHeader>
+          {editingPrograma && (
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Título</Label>
+                  <Input
+                    value={editingPrograma.titulo}
+                    onChange={(e) => setEditingPrograma({...editingPrograma, titulo: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Preço (USD)</Label>
+                  <Input
+                    type="number"
+                    value={editingPrograma.preco}
+                    onChange={(e) => setEditingPrograma({...editingPrograma, preco: parseFloat(e.target.value)})}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>País</Label>
+                  <Input
+                    value={editingPrograma.pais}
+                    onChange={(e) => setEditingPrograma({...editingPrograma, pais: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Cidade</Label>
+                  <Input
+                    value={editingPrograma.cidade}
+                    onChange={(e) => setEditingPrograma({...editingPrograma, cidade: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label>Vagas Disponíveis</Label>
+                <Input
+                  type="number"
+                  value={editingPrograma.vagasDisponiveis}
+                  onChange={(e) => setEditingPrograma({...editingPrograma, vagasDisponiveis: parseInt(e.target.value)})}
+                />
+              </div>
+              
+              <div>
+                <Label>Descrição</Label>
+                <Textarea
+                  value={editingPrograma.descricao}
+                  onChange={(e) => setEditingPrograma({...editingPrograma, descricao: e.target.value})}
+                  rows={4}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingPrograma(null)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={async () => {
+                if (editingPrograma?.id) {
+                  setIsLoading(true);
+                  try {
+                    await programaService.atualizar(editingPrograma.id, editingPrograma);
+                    await loadProgramas();
+                    setEditingPrograma(null);
+                    toast({
+                      title: "Sucesso",
+                      description: "Programa atualizado com sucesso!"
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Erro",
+                      description: "Erro ao atualizar programa.",
+                      variant: "destructive"
+                    });
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
